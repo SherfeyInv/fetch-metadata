@@ -62,9 +62,9 @@ Subsequent actions will have access to the following outputs:
 - `steps.dependabot-metadata.outputs.dependency-names`
   - A comma-separated list of the package names updated by the PR.
 - `steps.dependabot-metadata.outputs.dependency-type`
-  - The type of dependency has determined this PR to be.  Possible values are: `direct:production`, `direct:development` and `indirect`.  See [the `allow` documentation](https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/configuration-options-for-dependency-updates#allow) for descriptions of each.
+  - The type of dependency has determined this PR to be.  Possible values are: `direct:production`, `direct:development` and `indirect`.  See [the `allow` documentation](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#dependency-type-allow) for descriptions of each.
 - `steps.dependabot-metadata.outputs.update-type`
-  - The highest semver change being made by this PR, e.g. `version-update:semver-major`. For all possible values, see [the `ignore` documentation](https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically/configuration-options-for-dependency-updates#ignore).
+  - The highest semver change being made by this PR, e.g. `version-update:semver-major`. For all possible values, see [the `ignore` documentation](https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#ignore--).
 - `steps.dependabot-metadata.outputs.updated-dependencies-json`
   - A JSON string containing the full information about each updated Dependency.
 - `steps.dependabot-metadata.outputs.directory`
@@ -153,10 +153,9 @@ jobs:
         uses: dependabot/fetch-metadata@v2
       - name: Enable auto-merge for Dependabot PRs
         if: ${{contains(steps.dependabot-metadata.outputs.dependency-names, 'rails') && steps.dependabot-metadata.outputs.update-type == 'version-update:semver-patch'}}
-        run: gh pr merge --auto --merge "$PR_URL"
+        run: gh pr merge --auto --merge "${{github.event.pull_request.html_url}}"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 ```
 
 ### Labelling
@@ -182,9 +181,8 @@ jobs:
         uses: dependabot/fetch-metadata@v2
       - name: Add a label for all production dependencies
         if: ${{ steps.dependabot-metadata.outputs.dependency-type == 'direct:production' }}
-        run: gh pr edit "$PR_URL" --add-label "production"
+        run: gh pr edit "${{github.event.pull_request.html_url}}" --add-label "production"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 ```
 
@@ -207,7 +205,7 @@ jobs:
   1. Run the action to generate a version bump PR.
   2. Merge the PR.
   3. Tag that merge commit as a new release using the format `v1.2.3`. The job summary contains a URL pre-populated with the correct version for the title and tag.
-  4. Once the release is tagged, another GitHub Action workflow automatically moves the `v2` tracking tag to point to the new version.
+  4. Once the release is tagged, another GitHub Action workflow automatically publishes the new version of the immutable action package for this release.
 
 </p>
 </details>
